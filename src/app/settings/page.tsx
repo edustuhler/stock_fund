@@ -1,103 +1,97 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+
+export default function PortfolioSettings() {
+  const [startDate, setStartDate] = useState("");
+  const [holdings, setHoldings] = useState<any[]>([]);
+  const [symbol, setSymbol] = useState("");
+  const [type, setType] = useState("");
+  const [quantity, setQuantity] = useState<number>(0);
+  const [message, setMessage] = useState("");
+
+  const addHolding = async () => {
+    if (!symbol || quantity <= 0) return;
+
+    const res = await fetch("/api/asset/validate", {
+      method: "POST",
+      body: JSON.stringify({ symbol, type }),
+    });
+    const data = await res.json();
+    if (!data.valid) {
+      setMessage(`Ativo inválido: ${symbol}`);
+      return;
+    }
+
+    setHoldings([...holdings, { instrument_id: data.instrument_id, symbol, type, quantity }]);
+    setSymbol("");
+    setQuantity(0);
+    setMessage("");
+  };
+
+  const savePortfolio = async () => {
+    const res = await fetch("/api/portfolio", {
+      method: "POST",
+      body: JSON.stringify({ start_date: startDate, holdings }),
+    });
+    const data = await res.json();
+    setMessage(data.message || data.error);
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Configurar Carteira</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <div>
+        <label>Data de Início:</label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={e => setStartDate(e.target.value)}
+          className="border p-1 ml-2"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="font-semibold">Adicionar Ativo</h2>
+        <input
+          type="text"
+          placeholder="Escopo"
+          value={type}
+          onChange={e => setType(e.target.value)}
+          className="border p-1 mr-2"
+        />
+        <input
+          type="text"
+          placeholder="Símbolo"
+          value={symbol}
+          onChange={e => setSymbol(e.target.value)}
+          className="border p-1 mr-2"
+        />
+        <input
+          type="number"
+          placeholder="Quantidade"
+          value={quantity}
+          onChange={e => setQuantity(Number(e.target.value))}
+          className="border p-1 mr-2 w-24"
+        />
+        <Button onClick={addHolding}>Adicionar</Button>
+      </div>
+
+      {holdings.length > 0 && (
+        <div>
+          <h2 className="font-semibold">Ativos na Carteira</h2>
+          <ul>
+            {holdings.map((h, i) => (
+              <li key={i}>{h.symbol} - {h.quantity}</li>
+            ))}
+          </ul>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      <Button onClick={savePortfolio}>Salvar Carteira</Button>
+      {message && <p className="text-red-600">{message}</p>}
     </div>
   );
 }
